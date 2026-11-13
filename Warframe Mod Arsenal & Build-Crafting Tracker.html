@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0b0e14">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Warframe Mod Arsenal & Build-Crafting Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Rajdhani for Warframe aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Rajdhani', 'sans-serif'],
+                    },
+                    colors: {
+                        wf: {
+                            bg: '#090c12',
+                            surface: '#111622',
+                            card: '#161d2c',
+                            border: '#253047',
+                            gold: '#d4af37',
+                            goldLight: '#f3d06b',
+                            cyan: '#38bdf8',
+                            cyanDark: '#0284c7',
+                            bronze: '#cd7f32',
+                            silver: '#cbd5e1',
+                            archon: '#ef4444'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbars & Mobile Polish */
+        body {
+            background-color: #090c12;
+            color: #e2e8f0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Subtle Orokin-inspired glow */
+        .orokin-glow {
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.12);
+        }
+        .owned-card-glow {
+            border-color: rgba(56, 189, 248, 0.45);
+            background: linear-gradient(145deg, #161d2c 0%, #132133 100%);
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.4rem center;
+            background-repeat: no-repeat;
+            background-size: 1.1em 1.1em;
+            padding-right: 1.75rem;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-wf-cyan selection:text-slate-950">
+
+    <!-- Top App Header -->
+    <header class="sticky top-0 z-30 bg-wf-surface/95 backdrop-blur-md border-b border-wf-border">
+        <div class="max-w-6xl mx-auto px-3 sm:px-6 py-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <!-- Brand & Stats -->
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-wf-gold/25 to-wf-cyan/20 border border-wf-gold/50 flex items-center justify-center orokin-glow shrink-0">
+                        <!-- Custom Orokin Lotus/Mod SVG Icon -->
+                        <svg class="w-5 h-5 text-wf-goldLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 19 8.5 19 15.5 12 22 5 15.5 5 8.5 12 2"></polygon>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-lg sm:text-xl font-bold tracking-wide text-white leading-tight">
+                            MOD ARSENAL <span class="text-wf-gold text-xs font-sans font-semibold uppercase tracking-widest ml-1">TennoDB</span>
+                        </h1>
+                        <p id="ownedCounter" class="text-xs text-slate-400">
+                            Loading database...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Toolbar -->
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <button id="btnOpenImport" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-wf-border text-xs sm:text-sm font-medium text-slate-200 flex items-center gap-1.5 transition">
+                        <svg class="w-4 h-4 text-wf-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        <span>Import</span>
+                    </button>
+
+                    <button id="btnOpenExport" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-wf-gold to-amber-500 hover:from-wf-goldLight hover:to-amber-400 active:scale-95 text-slate-950 font-semibold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-amber-500/15 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                        <span>AI Export</span>
+                    </button>
+
+                    <button id="btnSyncDb" title="Force Sync Latest Mods from WFCD" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-wf-border text-slate-300 transition">
+                        <svg id="syncIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Quick Ownership Toggle Row -->
+            <div class="mt-3 flex flex-col sm:flex-row gap-2">
+                <div class="relative flex-1">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input id="searchInput" type="text" placeholder="Search mods by name, stat, or set (e.g. Blind Rage, Strength, Galvanized)..."
+                        class="w-full pl-10 pr-9 py-2.5 rounded-xl bg-wf-bg border border-wf-border focus:border-wf-cyan focus:outline-none text-sm text-white placeholder-slate-500 transition">
+                    <button id="btnClearSearch" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Segmented Ownership Filter -->
+                <div class="grid grid-cols-3 bg-wf-bg p-1 rounded-xl border border-wf-border shrink-0">
+                    <button data-own-filter="all" class="own-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-wf-card text-white shadow transition">All</button>
+                    <button data-own-filter="owned" class="own-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">Owned</button>
+                    <button data-own-filter="unowned" class="own-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">Missing</button>
+                </div>
+            </div>
+
+            <!-- Category Tabs (Horizontal Scroll on Mobile) -->
+            <div id="categoryTabs" class="mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Secondary Filter Strip: Polarity & Rarity -->
+            <div class="mt-2 pt-2 border-t border-wf-border/60 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <!-- Polarity Pills -->
+                <div id="polarityFilters" class="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Rarity Select -->
+                <div class="flex items-center gap-2 ml-auto">
+                    <select id="raritySelect" class="bg-wf-bg border border-wf-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:border-wf-cyan focus:outline-none">
+                        <option value="all">All Rarities</option>
+                        <option value="Legendary">Primed / Legendary</option>
+                        <option value="Archon">Archon</option>
+                        <option value="Galvanized">Galvanized</option>
+                        <option value="Rare">Rare</option>
+                        <option value="Uncommon">Uncommon</option>
+                        <option value="Common">Common</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-6 py-4">
+        <!-- Status / Loading / Error Banner -->
+        <div id="statusContainer" class="py-16 text-center">
+            <div class="inline-block w-10 h-10 border-4 border-wf-cyan/30 border-t-wf-cyan rounded-full animate-spin mb-4"></div>
+            <h2 class="text-lg font-display font-bold text-white">Syncing Cephalon Simaris Mod Database...</h2>
+            <p class="text-sm text-slate-400 mt-1">Fetching live mod registry from WFCD public export</p>
+        </div>
+
+        <!-- Results Summary Bar -->
+        <div id="resultsBar" class="hidden flex items-center justify-between mb-3 text-xs text-slate-400">
+            <span id="showingCount">Showing 0 mods</span>
+            <button id="btnResetFilters" class="text-wf-cyan hover:underline hidden">Reset filters</button>
+        </div>
+
+        <!-- Mod Grid -->
+        <div id="modGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Mod cards rendered here -->
+        </div>
+
+        <!-- Load More Pagination Button (keeps DOM blazing fast on mobile) -->
+        <div id="loadMoreWrapper" class="hidden mt-6 mb-8 text-center">
+            <button id="btnLoadMore" class="px-6 py-3 rounded-xl bg-wf-surface hover:bg-slate-800 border border-wf-border text-sm font-semibold text-wf-cyan transition">
+                Load More Mods
+            </button>
+        </div>
+    </main>
+
+    <!-- Toast Notification Banner (Replaces alert()) -->
+    <div id="toastContainer" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 w-11/12 max-w-md"></div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL 1: BULK IMPORT OWNED MODS                                       -->
+    <!-- ===================================================================== -->
+    <div id="importModal" class="fixed inset-0 z-40 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-wf-surface border border-wf-border rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="px-5 py-4 border-b border-wf-border flex items-center justify-between">
+                <div>
+                    <h3 class="font-display text-xl font-bold text-white">Bulk Import Owned Mods</h3>
+                    <p class="text-xs text-slate-400">Paste a list to automatically check boxes and set fusion ranks</p>
+                </div>
+                <button data-close-modal="importModal" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-5 overflow-y-auto space-y-4">
+                <div class="bg-wf-bg/90 border border-wf-border rounded-xl p-3 text-xs text-slate-300 space-y-1">
+                    <p class="font-semibold text-wf-cyan">Supported Formats:</p>
+                    <p>• Comma or newline separated: <code class="text-wf-goldLight">Blind Rage, Adaptation, Rolling Guard</code></p>
+                    <p>• Optional rank tags (untagged mods default to Max Rank): <code class="text-wf-goldLight">Primed Continuity (R8), Archon Stretch R9</code></p>
+                    <p>• Category headers like <code class="text-slate-400">[Warframe]</code> or <code class="text-slate-400">[Primary]</code> are automatically ignored.</p>
+                </div>
+
+                <div>
+                    <label for="importTextarea" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Paste Mod List</label>
+                    <textarea id="importTextarea" rows="7" placeholder="[Warframe] Blind Rage, Transient Fortitude, Primed Flow (R8), Adaptation&#10;[Primary] Galvanized Chamber, Critical Delay, Hunter Munitions"
+                        class="w-full rounded-xl bg-wf-bg border border-wf-border focus:border-wf-cyan focus:outline-none p-3 text-sm text-white placeholder-slate-600 font-mono"></textarea>
+                </div>
+
+                <!-- Import Mode Option -->
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-wf-card/60 p-3 rounded-xl border border-wf-border">
+                    <label class="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer">
+                        <input id="importReplaceMode" type="checkbox" class="w-4 h-4 rounded border-slate-600 text-wf-cyan focus:ring-wf-cyan bg-wf-bg">
+                        <span>Replace existing checklist (unchecked = merge with current)</span>
+                    </label>
+                </div>
+
+                <!-- Import Summary Report (Hidden until run) -->
+                <div id="importSummary" class="hidden rounded-xl border p-3.5 text-xs space-y-2">
+                    <div id="importMatchedText" class="font-semibold text-emerald-400"></div>
+                    <div id="importUnmatchedWrapper" class="hidden">
+                        <p class="font-semibold text-amber-400 mb-1">Unmatched items (check spelling or variant):</p>
+                        <div id="importUnmatchedList" class="p-2 rounded-lg bg-wf-bg border border-amber-500/30 text-amber-200 font-mono break-words max-h-28 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3.5 border-t border-wf-border bg-wf-bg/60 flex items-center justify-end gap-2.5">
+                <button data-close-modal="importModal" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-medium text-slate-300">Close</button>
+                <button id="btnRunImport" class="px-5 py-2 rounded-xl bg-wf-cyan hover:bg-sky-400 text-slate-950 font-semibold text-xs sm:text-sm transition">
+                    Parse & Mark Owned
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL 2: EXPORT FOR AI BUILD CRAFTING & JSON BACKUP                   -->
+    <!-- ===================================================================== -->
+    <div id="exportModal" class="fixed inset-0 z-40 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-wf-surface border border-wf-border rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="px-5 py-4 border-b border-wf-border flex items-center justify-between">
+                <div>
+                    <h3 class="font-display text-xl font-bold text-white">Export Arsenal for AI Build Crafting</h3>
+                    <p id="exportStatsSubtitle" class="text-xs text-slate-400">Compact token-optimized format with partial ranks</p>
+                </div>
+                <button data-close-modal="exportModal" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-5 overflow-y-auto space-y-4">
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-wf-gold">AI Prompt-Ready List</span>
+                        <span id="tokenEstimate" class="text-xs text-slate-400">~0 tokens</span>
+                    </div>
+                    <textarea id="exportTextarea" readonly rows="9"
+                        class="w-full rounded-xl bg-wf-bg border border-wf-border p-3 text-xs sm:text-sm text-slate-200 font-mono focus:outline-none"></textarea>
+                </div>
+
+                <!-- JSON Backup Section -->
+                <div class="pt-3 border-t border-wf-border flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-300">Full State Backup (JSON)</p>
+                        <p class="text-[11px] text-slate-500">Save or restore your exact database state across devices</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btnDownloadJson" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-wf-border text-xs text-slate-200 font-medium">
+                            Download JSON
+                        </button>
+                        <label class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-wf-border text-xs text-slate-200 font-medium cursor-pointer">
+                            Restore JSON
+                            <input id="inputRestoreJson" type="file" accept=".json" class="hidden">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-5 py-3.5 border-t border-wf-border bg-wf-bg/60 flex items-center justify-between gap-2.5">
+                <button id="btnClearAllOwned" class="px-3 py-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-950/50 transition">
+                    Reset All
+                </button>
+                <div class="flex items-center gap-2">
+                    <button data-close-modal="exportModal" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-medium text-slate-300">Close</button>
+                    <button id="btnCopyExport" class="px-5 py-2 rounded-xl bg-gradient-to-r from-wf-gold to-amber-500 hover:from-wf-goldLight hover:to-amber-400 text-slate-950 font-semibold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                        <span>Copy to Clipboard</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Warframe Mod Arsenal & Build-Crafting Tracker
+         * Single-file PWA with live WFCD JSON sync, rank management, bulk text import, and AI export.
+         */
+        (() => {
+            // =========================================================================
+            // 1. CONSTANTS & CONFIGURATION
+            // =========================================================================
+            const DATA_SOURCES = [
+                'https://cdn.jsdelivr.net/npm/@wfcd/items@latest/data/json/Mods.json',
+                'https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/Mods.json'
+            ];
+
+            const STORAGE_KEYS = {
+                OWNED_STATE: 'wf_mod_arsenal_owned_v1',     // { [modId]: { owned: true, rank: 8 } }
+                CACHED_DB: 'wf_mod_arsenal_db_cache_v1',    // Cached cleaned mod list
+                CACHE_TIME: 'wf_mod_arsenal_cache_ts_v1'
+            };
+
+            const CATEGORIES = [
+                'All',
+                'Warframe',
+                'Aura',
+                'Exilus',
+                'Primary',
+                'Secondary',
+                'Melee',
+                'Companion/Archwing',
+                'Other'
+            ];
+
+            const POLARITIES = [
+                { id: 'all', label: 'All Polarities', symbol: '✦' },
+                { id: 'madurai', label: 'Madurai', symbol: 'V' },
+                { id: 'vazarin', label: 'Vazarin', symbol: 'D' },
+                { id: 'naramon', label: 'Naramon', symbol: '—' },
+                { id: 'zenurik', label: 'Zenurik', symbol: '=' },
+                { id: 'unairu', label: 'Unairu', symbol: 'R' },
+                { id: 'penjaga', label: 'Penjaga', symbol: 'Y' },
+                { id: 'umbra', label: 'Umbra', symbol: 'U' }
+            ];
+
+            const PAGE_SIZE = 60;
+
+            // =========================================================================
+            // 2. APPLICATION STATE
+            // =========================================================================
+            const state = {
+                mods: [],               // Cleaned & deduplicated mod array
+                modMapById: new Map(),  // Fast lookup by canonical ID
+                owned: {},              // { [id]: { owned: boolean, rank: number } }
+                filters: {
+                    search: '',
+                    category: 'All',
+                    polarity: 'all',
+                    rarity: 'all',
+                    ownership: 'all'    // 'all' | 'owned' | 'unowned'
+                },
+                visibleLimit: PAGE_SIZE,
+                confirmClearPending: false
+            };
+
+            // =========================================================================
+            // 3. DOM REFERENCES
+            // =========================================================================
+            const dom = {
+                ownedCounter: document.getElementById('ownedCounter'),
+                searchInput: document.getElementById('searchInput'),
+                btnClearSearch: document.getElementById('btnClearSearch'),
+                categoryTabs: document.getElementById('categoryTabs'),
+                polarityFilters: document.getElementById('polarityFilters'),
+                raritySelect: document.getElementById('raritySelect'),
+                statusContainer: document.getElementById('statusContainer'),
+                resultsBar: document.getElementById('resultsBar'),
+                showingCount: document.getElementById('showingCount'),
+                btnResetFilters: document.getElementById('btnResetFilters'),
+                modGrid: document.getElementById('modGrid'),
+                loadMoreWrapper: document.getElementById('loadMoreWrapper'),
+                btnLoadMore: document.getElementById('btnLoadMore'),
+                syncIcon: document.getElementById('syncIcon'),
+                // Modals
+                importModal: document.getElementById('importModal'),
+                importTextarea: document.getElementById('importTextarea'),
+                importReplaceMode: document.getElementById('importReplaceMode'),
+                importSummary: document.getElementById('importSummary'),
+                importMatchedText: document.getElementById('importMatchedText'),
+                importUnmatchedWrapper: document.getElementById('importUnmatchedWrapper'),
+                importUnmatchedList: document.getElementById('importUnmatchedList'),
+                exportModal: document.getElementById('exportModal'),
+                exportTextarea: document.getElementById('exportTextarea'),
+                exportStatsSubtitle: document.getElementById('exportStatsSubtitle'),
+                tokenEstimate: document.getElementById('tokenEstimate'),
+                btnClearAllOwned: document.getElementById('btnClearAllOwned'),
+                toastContainer: document.getElementById('toastContainer')
+            };
+
+            // =========================================================================
+            // 4. UTILITY FUNCTIONS (TOASTS, NORMALIZATION, CATEGORIZATION)
+            // =========================================================================
+            function showToast(message, type = 'info') {
+                const colors = {
+                    info: 'bg-slate-800 border-wf-cyan text-white',
+                    success: 'bg-emerald-950/95 border-emerald-500 text-emerald-100',
+                    warning: 'bg-amber-950/95 border-amber-500 text-amber-100',
+                    error: 'bg-rose-950/95 border-rose-500 text-rose-100'
+                };
+                const toast = document.createElement('div');
+                toast.className = `px-4 py-2.5 rounded-xl border shadow-xl text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+                toast.textContent = message;
+                dom.toastContainer.appendChild(toast);
+
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-y-2', 'opacity-0');
+                });
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3200);
+            }
+
+            /**
+             * Normalizes strings for fuzzy matching (strips punctuation, extra spaces, lowercases)
+             */
+            function normalizeModName(str) {
+                return (str || '')
+                    .toLowerCase()
+                    .replace(/['’\-_:.,]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            /**
+             * Categorizes a raw WFCD mod object into clean build-crafting tabs
+             */
+            function classifyModCategory(raw) {
+                const type = (raw.type || '').toLowerCase();
+                const compat = (raw.compatName || '').toLowerCase();
+                const name = (raw.name || '').toLowerCase();
+                const polarity = (raw.polarity || '').toLowerCase();
+
+                // 1. Aura Mods
+                if (polarity === 'aura' || type.includes('aura') || compat === 'aura') {
+                    return 'Aura';
+                }
+
+                // 2. Exilus Mods (Warframe or Weapon Exilus/Utility)
+                const isWarframeCompat = type.includes('warframe') || compat === 'warframe' || compat === 'any';
+                if ((raw.isExilus || raw.isUtility) && isWarframeCompat) {
+                    return 'Exilus';
+                }
+
+                // 3. Stance Mods -> Melee
+                if (type.includes('stance') || compat === 'stance') {
+                    return 'Melee';
+                }
+
+                // 4. Primary Weapons
+                if (
+                    type.includes('primary') ||
+                    ['rifle', 'shotgun', 'sniper', 'bow', 'assault rifle', 'launcher'].some(k => compat.includes(k))
+                ) {
+                    return 'Primary';
+                }
+
+                // 5. Secondary Weapons
+                if (
+                    type.includes('secondary') ||
+                    ['pistol', 'secondary', 'thrown'].some(k => compat.includes(k))
+                ) {
+                    return 'Secondary';
+                }
+
+                // 6. Melee Weapons
+                if (
+                    type.includes('melee') ||
+                    compat.includes('melee') ||
+                    compat.includes('glaive') ||
+                    compat.includes('claws') ||
+                    compat.includes('exalted') && name.includes('blade')
+                ) {
+                    return 'Melee';
+                }
+
+                // 7. Warframe (Standard & Augments)
+                if (
+                    type.includes('warframe') ||
+                    compat === 'warframe' ||
+                    (raw.isAugment && !compat.includes('archwing') && !compat.includes('companion'))
+                ) {
+                    return 'Warframe';
+                }
+
+                // 8. Companion & Archwing
+                if (
+                    type.includes('companion') ||
+                    type.includes('archwing') ||
+                    type.includes('arch-gun') ||
+                    type.includes('arch-melee') ||
+                    type.includes('kavat') ||
+                    type.includes('kubrow') ||
+                    type.includes('sentinel') ||
+                    type.includes('robotic') ||
+                    type.includes('beast') ||
+                    type.includes('hound') ||
+                    ['companion', 'archwing', 'arch-gun', 'arch-melee', 'sentinel', 'kubrow', 'kavat', 'beast', 'robotic', 'moa', 'hound'].some(k => compat.includes(k))
+                ) {
+                    return 'Companion/Archwing';
+                }
+
+                // 9. Everything else (Parazon, Requiem, Necramech, K-Drive, Railjack, etc.)
+                return 'Other';
+            }
+
+            /**
+             * Determines refined rarity badge (handles Archon & Galvanized explicitly for easy filtering)
+             */
+            function classifyModRarity(raw) {
+                const name = raw.name || '';
+                if (name.startsWith('Archon ')) return 'Archon';
+                if (name.startsWith('Galvanized ')) return 'Galvanized';
+                return raw.rarity || 'Common';
+            }
+
+            /**
+             * Extracts clean human-readable description/stats from WFCD mod levelStats or description
+             */
+            function extractModStatsText(raw) {
+                if (Array.isArray(raw.levelStats) && raw.levelStats.length > 0) {
+                    const maxLevel = raw.levelStats[raw.levelStats.length - 1];
+                    if (maxLevel && Array.isArray(maxLevel.stats) && maxLevel.stats.length > 0) {
+                        return maxLevel.stats
+                            .map(s => s.replace(/<[^>]*>/g, '').trim())
+                            .join(' • ');
+                    }
+                }
+                if (Array.isArray(raw.description) && raw.description.length > 0) {
+                    return raw.description.join(' ').replace(/<[^>]*>/g, '').trim();
+                }
+                if (typeof raw.description === 'string') {
+                    return raw.description.replace(/<[^>]*>/g, '').trim();
+                }
+                return raw.compatName ? `Compatible: ${raw.compatName}` : 'Utility / Special Mod';
+            }
+
+            // =========================================================================
+            // 5. DATA FETCHING, DEDUPLICATION & CLEANING
+            // =========================================================================
+            function processRawMods(rawList) {
+                if (!Array.isArray(rawList)) return [];
+
+                const dedupMap = new Map();
+
+                for (const item of rawList) {
+                    if (!item || typeof item.name !== 'string') continue;
+
+                    const name = item.name.trim();
+                    if (!name) continue;
+
+                    const typeLower = (item.type || '').toLowerCase();
+                    const nameLower = name.toLowerCase();
+
+                    // Filter out Riven Mods, Transmute Cores, and Codex-excluded dev/flawed duplicates
+                    if (
+                        typeLower.includes('riven') ||
+                        nameLower.includes('riven') ||
+                        nameLower.includes('transmute core') ||
+                        item.excludeFromCodex === true
+                    ) {
+                        continue;
+                    }
+
+                    // Filter out Conclave-only PvP mods if flagged
+                    if (item.isConclave === true || typeLower.includes('conclave')) {
+                        continue;
+                    }
+
+                    const fusionLimit = typeof item.fusionLimit === 'number' ? item.fusionLimit : 0;
+                    const baseDrain = typeof item.baseDrain === 'number' ? Math.abs(item.baseDrain) : 0;
+                    const category = classifyModCategory(item);
+                    const rarity = classifyModRarity(item);
+                    const polarity = (item.polarity || 'none').toLowerCase();
+                    const statsText = extractModStatsText(item);
+
+                    // Create deterministic key: name + category (allows same-named mods across distinct slots if any, while merging starter duplicates)
+                    const dedupKey = `${nameLower}::${category}`;
+
+                    const cleaned = {
+                        id: item.uniqueName || dedupKey,
+                        name,
+                        normalizedName: normalizeModName(name),
+                        category,
+                        compatName: item.compatName || item.type || category,
+                        rarity,
+                        polarity,
+                        baseDrain,
+                        maxDrain: baseDrain + fusionLimit,
+                        fusionLimit,
+                        isExilus: Boolean(item.isExilus || item.isUtility),
+                        isAura: category === 'Aura',
+                        statsText
+                    };
+
+                    // Deduplication strategy: prefer higher fusionLimit (eliminates Rank-3 starter Vitality/Serration over Rank-10 standard)
+                    if (!dedupMap.has(dedupKey)) {
+                        dedupMap.set(dedupKey, cleaned);
+                    } else {
+                        const existing = dedupMap.get(dedupKey);
+                        if (cleaned.fusionLimit > existing.fusionLimit) {
+                            dedupMap.set(dedupKey, cleaned);
+                        } else if (cleaned.fusionLimit === existing.fusionLimit && cleaned.statsText.length > existing.statsText.length) {
+                            dedupMap.set(dedupKey, cleaned);
+                        }
+                    }
+                }
+
+                // Sort alphabetically for crisp browsing
+                return Array.from(dedupMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            async function loadModsDatabase(forceRefresh = false) {
+                dom.syncIcon.classList.add('animate-spin');
+
+                try {
+                    // 1. Check localStorage cache first (valid for 24 hours unless forceRefresh)
+                    if (!forceRefresh) {
+                        const cachedRaw = localStorage.getItem(STORAGE_KEYS.CACHED_DB);
+                        const cachedTs = Number(localStorage.getItem(STORAGE_KEYS.CACHE_TIME) || 0);
+                        const isFresh = (Date.now() - cachedTs) < 24 * 60 * 60 * 1000;
+
+                        if (cachedRaw && isFresh) {
+                            const parsed = JSON.parse(cachedRaw);
+                            if (Array.isArray(parsed) && parsed.length > 500) {
+                                hydrateModsState(parsed);
+                                dom.syncIcon.classList.remove('animate-spin');
+                                return;
+                            }
+                        }
+                    }
+
+                    // 2. Fetch from primary CDN with GitHub raw fallback
+                    let fetchedJson = null;
+                    let lastError = null;
+
+                    for (const url of DATA_SOURCES) {
+                        try {
+                            const res = await fetch(url, { cache: 'no-store' });
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            fetchedJson = await res.json();
+                            if (Array.isArray(fetchedJson) && fetchedJson.length > 0) break;
+                        } catch (err) {
+                            lastError = err;
+                        }
+                    }
+
+                    if (!fetchedJson) {
+                        throw lastError || new Error('Unable to reach WFCD mod repository.');
+                    }
+
+                    const cleanedMods = processRawMods(fetchedJson);
+
+                    // Save cleaned list to cache
+                    try {
+                        localStorage.setItem(STORAGE_KEYS.CACHED_DB, JSON.stringify(cleanedMods));
+                        localStorage.setItem(STORAGE_KEYS.CACHE_TIME, String(Date.now()));
+                    } catch (e) {
+                        // Ignore quota errors if mobile browser storage is tight
+                    }
+
+                    hydrateModsState(cleanedMods);
+                    if (forceRefresh) {
+                        showToast(`Synced ${cleanedMods.length} mods from WFCD database!`, 'success');
+                    }
+                } catch (err) {
+                    console.error('Failed to load mods:', err);
+                    // Fallback to stale cache if offline
+                    const staleCache = localStorage.getItem(STORAGE_KEYS.CACHED_DB);
+                    if (staleCache) {
+                        hydrateModsState(JSON.parse(staleCache));
+                        showToast('Offline mode: loaded cached mod database.', 'warning');
+                    } else {
+                        renderErrorState(err.message);
+                    }
+                } finally {
+                    dom.syncIcon.classList.remove('animate-spin');
+                }
+            }
+
+            function hydrateModsState(cleanedMods) {
+                state.mods = cleanedMods;
+                state.modMapById.clear();
+                for (const mod of cleanedMods) {
+                    state.modMapById.set(mod.id, mod);
+                }
+
+                // Load saved owned state
+                try {
+                    const savedOwned = localStorage.getItem(STORAGE_KEYS.OWNED_STATE);
+                    state.owned = savedOwned ? JSON.parse(savedOwned) : {};
+                } catch (e) {
+                    state.owned = {};
+                }
+
+                dom.statusContainer.classList.add('hidden');
+                dom.resultsBar.classList.remove('hidden');
+                updateHeaderStats();
+                renderCategoryTabs();
+                renderPolarityPills();
+                renderModGrid(true);
+            }
+
+            function renderErrorState(errorMsg) {
+                dom.statusContainer.classList.remove('hidden');
+                dom.statusContainer.innerHTML = `
+                    <div class="max-w-md mx-auto bg-wf-surface border border-rose-500/40 rounded-2xl p-6 text-center">
+                        <div class="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        </div>
+                        <h2 class="font-display text-lg font-bold text-white">Connection Error</h2>
+                        <p class="text-xs text-slate-400 mt-1">${errorMsg || 'Could not download Warframe mod list.'}</p>
+                        <button onclick="location.reload()" class="mt-4 px-5 py-2.5 rounded-xl bg-wf-cyan text-slate-950 font-semibold text-xs">
+                            Retry Connection
+                        </button>
+                    </div>
+                `;
+            }
+
+            // =========================================================================
+            // 6. PERSISTENCE & OWNERSHIP MUTATIONS
+            // =========================================================================
+            function saveOwnedState() {
+                try {
+                    localStorage.setItem(STORAGE_KEYS.OWNED_STATE, JSON.stringify(state.owned));
+                } catch (e) {
+                    showToast('Warning: Could not persist to localStorage.', 'warning');
+                }
+                updateHeaderStats();
+            }
+
+            function toggleModOwned(modId, explicitOwned = null) {
+                const mod = state.modMapById.get(modId);
+                if (!mod) return;
+
+                const currentlyOwned = Boolean(state.owned[modId]?.owned);
+                const nextOwned = explicitOwned !== null ? explicitOwned : !currentlyOwned;
+
+                if (nextOwned) {
+                    const existingRank = state.owned[modId]?.rank;
+                    state.owned[modId] = {
+                        owned: true,
+                        rank: typeof existingRank === 'number' ? existingRank : mod.fusionLimit
+                    };
+                } else {
+                    delete state.owned[modId];
+                }
+
+                saveOwnedState();
+                renderCategoryTabs();
+
+                // Update card in-place if not filtering by ownership, or re-render list if filtering by owned/unowned
+                if (state.filters.ownership !== 'all') {
+                    renderModGrid(false);
+                } else {
+                    updateSingleCardUI(modId);
+                }
+            }
+
+            function setModRank(modId, newRank) {
+                const mod = state.modMapById.get(modId);
+                if (!mod) return;
+
+                const clampedRank = Math.max(0, Math.min(mod.fusionLimit, Number(newRank)));
+                // Changing rank automatically marks the mod as owned for frictionless UX
+                state.owned[modId] = {
+                    owned: true,
+                    rank: clampedRank
+                };
+
+                saveOwnedState();
+                renderCategoryTabs();
+                updateSingleCardUI(modId);
+            }
+
+            // =========================================================================
+            // 7. FILTERING & RENDERING UI
+            // =========================================================================
+            function updateHeaderStats() {
+                const ownedIds = Object.keys(state.owned).filter(id => state.owned[id]?.owned && state.modMapById.has(id));
+                const total = state.mods.length;
+                const pct = total > 0 ? Math.round((ownedIds.length / total) * 100) : 0;
+                dom.ownedCounter.innerHTML = `<span class="text-wf-cyan font-semibold">${ownedIds.length}</span> / ${total} Owned (${pct}%)`;
+            }
+
+            function renderCategoryTabs() {
+                // Count owned per category for helpful badges
+                const counts = {};
+                for (const cat of CATEGORIES) counts[cat] = 0;
+
+                for (const mod of state.mods) {
+                    if (state.owned[mod.id]?.owned) {
+                        counts['All']++;
+                        counts[mod.category] = (counts[mod.category] || 0) + 1;
+                    }
+                }
+
+                dom.categoryTabs.innerHTML = CATEGORIES.map(cat => {
+                    const active = state.filters.category === cat;
+                    const count = counts[cat] || 0;
+                    return `
+                        <button data-cat="${cat}"
+                            class="cat-tab-btn shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition ${
+                                active
+                                    ? 'bg-wf-cyan/15 border-wf-cyan text-wf-cyan shadow-sm'
+                                    : 'bg-wf-bg/80 border-wf-border text-slate-400 hover:text-slate-200'
+                            }">
+                            <span>${cat}</span>
+                            ${count > 0 ? `<span class="px-1.5 py-0.2 rounded-md text-[10px] ${active ? 'bg-wf-cyan text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}">${count}</span>` : ''}
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            function renderPolarityPills() {
+                dom.polarityFilters.innerHTML = POLARITIES.map(pol => {
+                    const active = state.filters.polarity === pol.id;
+                    return `
+                        <button data-pol="${pol.id}" title="${pol.label}"
+                            class="pol-pill-btn shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium border transition flex items-center gap-1 ${
+                                active
+                                    ? 'bg-wf-gold/20 border-wf-gold text-wf-goldLight'
+                                    : 'bg-wf-bg border-wf-border text-slate-400 hover:text-white'
+                            }">
+                            <span class="font-mono font-bold">${pol.symbol}</span>
+                            <span class="hidden md:inline">${pol.label}</span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            function getFilteredMods() {
+                const q = state.filters.search.toLowerCase().trim();
+                const cat = state.filters.category;
+                const pol = state.filters.polarity;
+                const rar = state.filters.rarity;
+                const own = state.filters.ownership;
+
+                return state.mods.filter(mod => {
+                    const isOwned = Boolean(state.owned[mod.id]?.owned);
+                    if (own === 'owned' && !isOwned) return false;
+                    if (own === 'unowned' && isOwned) return false;
+                    if (cat !== 'All' && mod.category !== cat) return false;
+                    if (pol !== 'all' && mod.polarity !== pol) return false;
+                    if (rar !== 'all' && mod.rarity !== rar) return false;
+
+                    if (q) {
+                        const hay = `${mod.name} ${mod.statsText} ${mod.compatName} ${mod.rarity}`.toLowerCase();
+                        if (!hay.includes(q)) return false;
+                    }
+                    return true;
+                });
+            }
+
+            function getRarityBadgeStyle(rarity) {
+                switch (rarity) {
+                    case 'Legendary':
+                        return 'bg-amber-500/15 text-wf-goldLight border-wf-gold/40';
+                    case 'Archon':
+                        return 'bg-rose-500/15 text-rose-300 border-rose-500/40';
+                    case 'Galvanized':
+                        return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40';
+                    case 'Rare':
+                        return 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30';
+                    case 'Uncommon':
+                        return 'bg-slate-400/15 text-slate-200 border-slate-400/30';
+                    default:
+                        return 'bg-orange-900/20 text-amber-600 border-amber-700/30';
+                }
+            }
+
+            function getPolaritySymbol(polarity) {
+                const found = POLARITIES.find(p => p.id === polarity);
+                return found ? `${found.symbol} ${found.label}` : polarity.toUpperCase();
+            }
+
+            function buildModCardHTML(mod) {
+                const entry = state.owned[mod.id];
+                const isOwned = Boolean(entry?.owned);
+                const selectedRank = isOwned && typeof entry.rank === 'number' ? entry.rank : mod.fusionLimit;
+
+                // Calculate current drain based on selected rank
+                const currentDrain = mod.isAura
+                    ? -(mod.baseDrain + selectedRank)
+                    : (mod.baseDrain + selectedRank);
+
+                // Generate rank options R0 -> R{fusionLimit}
+                let rankOptions = '';
+                for (let r = mod.fusionLimit; r >= 0; r--) {
+                    const isMax = r === mod.fusionLimit && mod.fusionLimit > 0;
+                    rankOptions += `<option value="${r}" ${r === selectedRank ? 'selected' : ''}>R${r}${isMax ? ' (Max)' : ''}</option>`;
+                }
+
+                return `
+                    <article id="card-${CSS.escape(mod.id)}" data-mod-id="${mod.id}"
+                        class="mod-card rounded-2xl border p-3.5 flex flex-col justify-between transition duration-150 ${
+                            isOwned ? 'owned-card-glow' : 'bg-wf-card border-wf-border hover:border-slate-600'
+                        }">
+                        <div>
+                            <!-- Top Row: Name + Owned Checkbox -->
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <h3 class="font-display text-base sm:text-lg font-bold tracking-wide text-white truncate" title="${mod.name}">
+                                        ${mod.name}
+                                    </h3>
+                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border ${getRarityBadgeStyle(mod.rarity)}">
+                                            ${mod.rarity === 'Legendary' ? 'Primed' : mod.rarity}
+                                        </span>
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-wf-bg border border-wf-border text-slate-300">
+                                            ${mod.category}
+                                        </span>
+                                        ${mod.polarity !== 'none' ? `
+                                            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-wf-bg border border-wf-border text-wf-goldLight">
+                                                ${getPolaritySymbol(mod.polarity)}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <!-- Touch-Friendly Owned Toggle Button -->
+                                <button type="button" data-action="toggle-own" data-id="${mod.id}"
+                                    aria-label="Mark ${mod.name} as owned"
+                                    class="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 transition active:scale-90 ${
+                                        isOwned
+                                            ? 'bg-wf-cyan border-wf-cyan text-slate-950 shadow-md shadow-sky-500/25'
+                                            : 'bg-wf-bg border-wf-border text-slate-500 hover:border-slate-400'
+                                    }">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Stats / Description -->
+                            <p class="mt-2.5 text-xs text-slate-300/90 leading-relaxed line-clamp-2" title="${mod.statsText}">
+                                ${mod.statsText}
+                            </p>
+                        </div>
+
+                        <!-- Bottom Row: Drain & Rank Selector -->
+                        <div class="mt-3 pt-2.5 border-t border-wf-border/60 flex items-center justify-between gap-2">
+                            <div class="text-xs text-slate-400">
+                                Drain: <span class="font-mono font-semibold ${mod.isAura ? 'text-emerald-400' : 'text-slate-200'}">${currentDrain > 0 ? currentDrain : currentDrain}</span>
+                                <span class="text-[11px] text-slate-500">(${mod.baseDrain}→${mod.maxDrain})</span>
+                            </div>
+
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-[11px] text-slate-400">Rank:</label>
+                                <select data-action="change-rank" data-id="${mod.id}"
+                                    class="rounded-lg bg-wf-bg border ${isOwned ? 'border-wf-cyan/60 text-wf-cyan font-semibold' : 'border-wf-border text-slate-300'} px-2 py-1 text-xs focus:outline-none focus:border-wf-cyan">
+                                    ${rankOptions}
+                                </select>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }
+
+            function updateSingleCardUI(modId) {
+                const mod = state.modMapById.get(modId);
+                if (!mod) return;
+                const cardEl = document.getElementById(`card-${CSS.escape(modId)}`);
+                if (cardEl) {
+                    cardEl.outerHTML = buildModCardHTML(mod);
+                }
+            }
+
+            function renderModGrid(resetPagination = true) {
+                if (resetPagination) {
+                    state.visibleLimit = PAGE_SIZE;
+                }
+
+                const filtered = getFilteredMods();
+                const hasActiveFilters =
+                    state.filters.search !== '' ||
+                    state.filters.category !== 'All' ||
+                    state.filters.polarity !== 'all' ||
+                    state.filters.rarity !== 'all' ||
+                    state.filters.ownership !== 'all';
+
+                dom.btnResetFilters.classList.toggle('hidden', !hasActiveFilters);
+                dom.showingCount.textContent = `Showing ${Math.min(state.visibleLimit, filtered.length)} of ${filtered.length} mods`;
+
+                if (filtered.length === 0) {
+                    dom.modGrid.innerHTML = `
+                        <div class="col-span-full py-12 text-center bg-wf-surface/60 border border-wf-border rounded-2xl p-6">
+                            <p class="font-display text-lg font-bold text-slate-300">No matching mods found</p>
+                            <p class="text-xs text-slate-500 mt-1">Try clearing your search query or switching category/polarity filters.</p>
+                        </div>
+                    `;
+                    dom.loadMoreWrapper.classList.add('hidden');
+                    return;
+                }
+
+                const slice = filtered.slice(0, state.visibleLimit);
+                dom.modGrid.innerHTML = slice.map(buildModCardHTML).join('');
+
+                if (filtered.length > state.visibleLimit) {
+                    dom.loadMoreWrapper.classList.remove('hidden');
+                    dom.btnLoadMore.textContent = `Load More (${filtered.length - state.visibleLimit} remaining)`;
+                } else {
+                    dom.loadMoreWrapper.classList.add('hidden');
+                }
+            }
+
+            // =========================================================================
+            // 8. BULK IMPORT PARSER (FUZZY MATCHING + RANK EXTRACTION)
+            // =========================================================================
+            function parseAndImportOwnedMods() {
+                const rawText = dom.importTextarea.value.trim();
+                if (!rawText) {
+                    showToast('Paste a list of mod names first.', 'warning');
+                    return;
+                }
+
+                // Build fast lookup maps for loaded mods
+                const exactNormalizedMap = new Map();
+                for (const mod of state.mods) {
+                    if (!exactNormalizedMap.has(mod.normalizedName)) {
+                        exactNormalizedMap.set(mod.normalizedName, mod);
+                    }
+                }
+
+                // Strip category headers like [Warframe], [Primary], markdown headers #, and split by comma or newline
+                const cleanedText = rawText
+                    .replace(/^#.*$/gm, '')
+                    .replace(/\[[^\]]+\]/g, ',');
+
+                const tokens = cleanedText
+                    .split(/[\n,;]+/)
+                    .map(t => t.replace(/^[-*•\d.)]+\s*/, '').trim())
+                    .filter(Boolean);
+
+                if (dom.importReplaceMode.checked) {
+                    state.owned = {};
+                }
+
+                let matchedCount = 0;
+                const unmatched = [];
+
+                for (const token of tokens) {
+                    // Extract optional rank suffix: e.g., "(R8)", "[R8]", "R8", "Rank 8", "(Rank 8)"
+                    let extractedRank = null;
+                    let namePart = token;
+
+                    const rankRegex = /(?:\(\s*(?:r|rank)?\s*(\d{1,2})\s*\)|\[\s*(?:r|rank)?\s*(\d{1,2})\s*\]|\b(?:r|rank)\s*(\d{1,2}))\s*$/i;
+                    const rankMatch = namePart.match(rankRegex);
+                    if (rankMatch) {
+                        const num = Number(rankMatch[1] || rankMatch[2] || rankMatch[3]);
+                        if (!Number.isNaN(num)) {
+                            extractedRank = num;
+                        }
+                        namePart = namePart.replace(rankRegex, '').trim();
+                    }
+
+                    const norm = normalizeModName(namePart);
+                    if (!norm) continue;
+
+                    // 1. Exact normalized match
+                    let matchedMod = exactNormalizedMap.get(norm);
+
+                    // 2. Fallback fuzzy match (handles minor missing prefixes/suffixes or slight typos)
+                    if (!matchedMod && norm.length >= 4) {
+                        for (const mod of state.mods) {
+                            if (mod.normalizedName === norm) {
+                                matchedMod = mod;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (matchedMod) {
+                        const finalRank = extractedRank !== null
+                            ? Math.max(0, Math.min(matchedMod.fusionLimit, extractedRank))
+                            : matchedMod.fusionLimit;
+
+                        state.owned[matchedMod.id] = {
+                            owned: true,
+                            rank: finalRank
+                        };
+                        matchedCount++;
+                    } else {
+                        unmatched.push(token);
+                    }
+                }
+
+                saveOwnedState();
+                renderCategoryTabs();
+                renderModGrid(false);
+
+                // Display Import Summary
+                dom.importSummary.classList.remove('hidden');
+                dom.importSummary.className = `rounded-xl border p-3.5 text-xs space-y-2 ${
+                    unmatched.length > 0 ? 'bg-amber-950/20 border-amber-500/40' : 'bg-emerald-950/20 border-emerald-500/40'
+                }`;
+                dom.importMatchedText.textContent = `✓ Successfully matched & marked ${matchedCount} mod${matchedCount === 1 ? '' : 's'} as Owned!`;
+
+                if (unmatched.length > 0) {
+                    dom.importUnmatchedWrapper.classList.remove('hidden');
+                    dom.importUnmatchedList.textContent = unmatched.join(', ');
+                } else {
+                    dom.importUnmatchedWrapper.classList.add('hidden');
+                }
+
+                showToast(`Imported ${matchedCount} mods!`, 'success');
+            }
+
+            // =========================================================================
+            // 9. AI BUILD-CRAFTING EXPORT GENERATOR
+            // =========================================================================
+            function generateAiExportText() {
+                const grouped = {};
+                for (const cat of CATEGORIES) {
+                    if (cat !== 'All') grouped[cat] = [];
+                }
+
+                let totalOwned = 0;
+
+                for (const mod of state.mods) {
+                    const entry = state.owned[mod.id];
+                    if (!entry || !entry.owned) continue;
+
+                    totalOwned++;
+                    const rank = typeof entry.rank === 'number' ? entry.rank : mod.fusionLimit;
+                    // Append (R#) ONLY when below max rank to keep token count super lean
+                    const label = rank < mod.fusionLimit ? `${mod.name} (R${rank})` : mod.name;
+                    grouped[mod.category].push(label);
+                }
+
+                if (totalOwned === 0) {
+                    return '# Owned Warframe Mods (0)\nNo mods marked as owned yet. Check off mods or use Import first!';
+                }
+
+                const lines = [`# Owned Warframe Mods (${totalOwned} total — unlisted ranks are Max Rank)`];
+                for (const [category, items] of Object.entries(grouped)) {
+                    if (items.length > 0) {
+                        lines.push(`[${category}] ${items.join(', ')}`);
+                    }
+                }
+
+                return lines.join('\n');
+            }
+
+            function openExportModal() {
+                const exportText = generateAiExportText();
+                dom.exportTextarea.value = exportText;
+
+                const approxTokens = Math.ceil(exportText.length / 4);
+                dom.tokenEstimate.textContent = `~${approxTokens.toLocaleString()} tokens`;
+                dom.exportModal.classList.remove('hidden');
+            }
+
+            function copyExportToClipboard() {
+                dom.exportTextarea.select();
+                dom.exportTextarea.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    showToast('Copied owned mod list to clipboard!', 'success');
+                } catch (err) {
+                    showToast('Select the text box and copy manually.', 'warning');
+                }
+            }
+
+            // =========================================================================
+            // 10. EVENT LISTENERS
+            // =========================================================================
+            function initEventListeners() {
+                // Search Input
+                let searchDebounce = null;
+                dom.searchInput.addEventListener('input', (e) => {
+                    const val = e.target.value;
+                    dom.btnClearSearch.classList.toggle('hidden', val.length === 0);
+                    clearTimeout(searchDebounce);
+                    searchDebounce = setTimeout(() => {
+                        state.filters.search = val;
+                        renderModGrid(true);
+                    }, 120);
+                });
+
+                dom.btnClearSearch.addEventListener('click', () => {
+                    dom.searchInput.value = '';
+                    dom.btnClearSearch.classList.add('hidden');
+                    state.filters.search = '';
+                    renderModGrid(true);
+                });
+
+                // Ownership Filter Segmented Buttons
+                document.querySelectorAll('.own-filter-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        state.filters.ownership = btn.dataset.ownFilter;
+                        document.querySelectorAll('.own-filter-btn').forEach(b => {
+                            const isActive = b === btn;
+                            b.className = `own-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                isActive ? 'bg-wf-card text-white shadow' : 'text-slate-400 hover:text-white'
+                            }`;
+                        });
+                        renderModGrid(true);
+                    });
+                });
+
+                // Category Tabs Delegation
+                dom.categoryTabs.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.cat-tab-btn');
+                    if (!btn) return;
+                    state.filters.category = btn.dataset.cat;
+                    renderCategoryTabs();
+                    renderModGrid(true);
+                });
+
+                // Polarity Pills Delegation
+                dom.polarityFilters.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.pol-pill-btn');
+                    if (!btn) return;
+                    state.filters.polarity = btn.dataset.pol;
+                    renderPolarityPills();
+                    renderModGrid(true);
+                });
+
+                // Rarity Select
+                dom.raritySelect.addEventListener('change', (e) => {
+                    state.filters.rarity = e.target.value;
+                    renderModGrid(true);
+                });
+
+                // Reset Filters
+                dom.btnResetFilters.addEventListener('click', () => {
+                    state.filters = {
+                        search: '',
+                        category: 'All',
+                        polarity: 'all',
+                        rarity: 'all',
+                        ownership: 'all'
+                    };
+                    dom.searchInput.value = '';
+                    dom.btnClearSearch.classList.add('hidden');
+                    dom.raritySelect.value = 'all';
+                    document.querySelectorAll('.own-filter-btn').forEach((b, idx) => {
+                        b.className = `own-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                            idx === 0 ? 'bg-wf-card text-white shadow' : 'text-slate-400 hover:text-white'
+                        }`;
+                    });
+                    renderCategoryTabs();
+                    renderPolarityPills();
+                    renderModGrid(true);
+                });
+
+                // Load More Button
+                dom.btnLoadMore.addEventListener('click', () => {
+                    state.visibleLimit += PAGE_SIZE;
+                    renderModGrid(false);
+                });
+
+                // Mod Grid Delegation (Owned Toggle & Rank Dropdown)
+                dom.modGrid.addEventListener('click', (e) => {
+                    const toggleBtn = e.target.closest('[data-action="toggle-own"]');
+                    if (toggleBtn) {
+                        toggleModOwned(toggleBtn.dataset.id);
+                    }
+                });
+
+                dom.modGrid.addEventListener('change', (e) => {
+                    const rankSelect = e.target.closest('[data-action="change-rank"]');
+                    if (rankSelect) {
+                        setModRank(rankSelect.dataset.id, rankSelect.value);
+                    }
+                });
+
+                // Sync Database Button
+                document.getElementById('btnSyncDb').addEventListener('click', () => {
+                    loadModsDatabase(true);
+                });
+
+                // Modal Open/Close Handlers
+                document.getElementById('btnOpenImport').addEventListener('click', () => {
+                    dom.importSummary.classList.add('hidden');
+                    dom.importModal.classList.remove('hidden');
+                });
+
+                document.getElementById('btnOpenExport').addEventListener('click', openExportModal);
+
+                document.querySelectorAll('[data-close-modal]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetId = btn.dataset.closeModal;
+                        document.getElementById(targetId)?.classList.add('hidden');
+                    });
+                });
+
+                // Close modals on backdrop click
+                [dom.importModal, dom.exportModal].forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) modal.classList.add('hidden');
+                    });
+                });
+
+                // Run Bulk Import
+                document.getElementById('btnRunImport').addEventListener('click', parseAndImportOwnedMods);
+
+                // Copy AI Export
+                document.getElementById('btnCopyExport').addEventListener('click', copyExportToClipboard);
+
+                // Download JSON Backup
+                document.getElementById('btnDownloadJson').addEventListener('click', () => {
+                    const blob = new Blob([JSON.stringify(state.owned, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `warframe-mod-arsenal-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('Downloaded JSON backup!', 'success');
+                });
+
+                // Restore JSON Backup
+                document.getElementById('inputRestoreJson').addEventListener('change', (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        try {
+                            const parsed = JSON.parse(evt.target.result);
+                            if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid JSON');
+                            state.owned = parsed;
+                            saveOwnedState();
+                            renderCategoryTabs();
+                            renderModGrid(false);
+                            openExportModal();
+                            showToast('Restored owned mods from JSON backup!', 'success');
+                        } catch (err) {
+                            showToast('Invalid JSON backup file.', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                    e.target.value = '';
+                });
+
+                // Two-step Reset All Owned (No confirm() dialog used)
+                dom.btnClearAllOwned.addEventListener('click', () => {
+                    if (!state.confirmClearPending) {
+                        state.confirmClearPending = true;
+                        dom.btnClearAllOwned.textContent = 'Tap again to confirm reset';
+                        setTimeout(() => {
+                            state.confirmClearPending = false;
+                            dom.btnClearAllOwned.textContent = 'Reset All';
+                        }, 3500);
+                    } else {
+                        state.confirmClearPending = false;
+                        dom.btnClearAllOwned.textContent = 'Reset All';
+                        state.owned = {};
+                        saveOwnedState();
+                        renderCategoryTabs();
+                        renderModGrid(false);
+                        openExportModal();
+                        showToast('Cleared all owned mod selections.', 'info');
+                    }
+                });
+            }
+
+            // =========================================================================
+            // 11. BOOTSTRAP APP ON WINDOW LOAD
+            // =========================================================================
+            window.addEventListener('load', () => {
+                initEventListeners();
+                loadModsDatabase(false);
+            });
+        })();
+    </script>
+</body>
+</html>
